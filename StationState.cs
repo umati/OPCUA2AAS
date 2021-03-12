@@ -22,13 +22,7 @@ namespace Station
         {
             base.OnAfterCreate(context, node);
 
-            //StationState objectNode = (StationState) node;
-
-            //if (m_stationTelemetry == null)
-            //{
-            //    m_stationTelemetry = new TelemetryState(this);
-            //    m_stationTelemetry.TypeDefinitionId = Objects.StationInstance_StationTelemetry;
-            //}
+            StationState objectNode = (StationState) node;
 
             //if (m_stationTelemetry.OverallRunningTime == null)
             //{
@@ -133,7 +127,7 @@ namespace Station
             //    StationCommands.OpenPressureReleaseValve.OnCallMethod = OpenPressureReleaseValve;
             //}
 
-            //m_context = context;
+            m_context = context;
             //m_stationClock = new Timer(Tick, this, Timeout.Infinite, (int)m_stationTelemetry.ActualCycleTime.Value);
         }
 

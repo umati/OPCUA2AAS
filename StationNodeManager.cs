@@ -15,7 +15,6 @@ namespace Opc.Ua.Sample
 
             List<string> namespaceUris = new List<string>();
             namespaceUris.Add("http://opcfoundation.org/UA/Station/");
-            //namespaceUris.Add("http://opcfoundation.org/UA/Station/Instance");
             NamespaceUris = namespaceUris;
 
             m_namespaceIndex = Server.NamespaceUris.GetIndexOrAppend(namespaceUris[0]);
@@ -26,6 +25,45 @@ namespace Opc.Ua.Sample
         {
             uint id = Utils.IncrementIdentifier(ref m_lastUsedId);
             return new NodeId(id, m_namespaceIndex);
+        }
+
+        private FolderState CreateFolder(NodeState parent, string path, string name)
+        {
+            FolderState folder = new FolderState(parent)
+            {
+                SymbolicName = name,
+                ReferenceTypeId = ReferenceTypes.Organizes,
+                TypeDefinitionId = ObjectTypeIds.FolderType,
+                NodeId = new NodeId(path, NamespaceIndex),
+                BrowseName = new QualifiedName(path, NamespaceIndex),
+                DisplayName = new LocalizedText("en", name),
+                WriteMask = AttributeWriteMask.None,
+                UserWriteMask = AttributeWriteMask.None,
+                EventNotifier = EventNotifiers.None
+            };
+            parent?.AddChild(folder);
+
+            return folder;
+        }
+
+        private MethodState CreateMethod(NodeState parent, string path, string name)
+        {
+            MethodState method = new MethodState(parent)
+            {
+                SymbolicName = name,
+                ReferenceTypeId = ReferenceTypeIds.HasComponent,
+                NodeId = new NodeId(path, NamespaceIndex),
+                BrowseName = new QualifiedName(path, NamespaceIndex),
+                DisplayName = new LocalizedText("en", name),
+                WriteMask = AttributeWriteMask.None,
+                UserWriteMask = AttributeWriteMask.None,
+                Executable = true,
+                UserExecutable = true
+            };
+
+            parent?.AddChild(method);
+
+            return method;
         }
 
         public override void CreateAddressSpace(IDictionary<NodeId, IList<IReference>> externalReferences)
@@ -39,7 +77,26 @@ namespace Opc.Ua.Sample
                 }
 
                 ImportNodeset2Xml(externalReferences, "Station.NodeSet2.xml");
+
+                FolderState root = CreateFolder(null, "AssetAdminShell", "AssetAdminShell");
+                root.AddReference(ReferenceTypes.Organizes, true, ObjectIds.ObjectsFolder);
+                references.Add(new NodeStateReference(ReferenceTypes.Organizes, false, root.NodeId));
+                root.EventNotifier = EventNotifiers.SubscribeToEvents;
+                AddRootNotifier(root);
+
+                MethodState createAASMethod = CreateMethod(root, "GenerateAAS", "GenerateAAS");
+                createAASMethod.OnCallMethod = new GenericMethodCalledEventHandler(OnGenerateAASCall);
+
+                AddPredefinedNode(SystemContext, root);
+
+                AddReverseReferences(externalReferences);
             }
+        }
+
+        private ServiceResult OnGenerateAASCall(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
+        {
+            // TODO
+            return ServiceResult.Good;
         }
 
         private void ImportNodeset2Xml(IDictionary<NodeId, IList<IReference>> externalReferences, string resourcepath)
@@ -55,12 +112,10 @@ namespace Opc.Ua.Sample
             }
             nodeSet.Import(SystemContext, predefinedNodes);
 
-            for (int ii = 0; ii < predefinedNodes.Count; ii++)
+            for (int i = 0; i < predefinedNodes.Count; i++)
             {
-                AddPredefinedNode(SystemContext, predefinedNodes[ii]);
+                AddPredefinedNode(SystemContext, predefinedNodes[i]);
             }
-
-            AddReverseReferences(externalReferences);
         }
 
         protected override NodeState AddBehaviourToPredefinedNode(ISystemContext context, NodeState predefinedNode)
@@ -80,80 +135,20 @@ namespace Opc.Ua.Sample
             switch ((uint)typeId.Identifier)
             {
                 case Station.ObjectTypes.StationType:
+                {
+                    if (objectNode is Station.StationState)
                     {
-                        if (objectNode is Station.StationState)
-                        {
-                            break;
-                        }
-
-                        Station.StationState newNode = new Station.StationState(objectNode.Parent);
-                        newNode.Create(context, objectNode);
-
-                        // replace the node in the parent.
-                        if (objectNode.Parent != null)
-                        {
-                            objectNode.Parent.ReplaceChild(context, newNode);
-                        }
-
-                        return newNode;
+                        break;
                     }
 
-                case Station.ObjectTypes.StationProductType:
-                    {
-                        if (objectNode is Station.StationProductState)
-                        {
-                            break;
-                        }
+                    //    Station.StationState newNode = new Station.StationState(objectNode.Parent);
+                    //    newNode.Create(context, objectNode);
 
-                        Station.StationProductState newNode = new Station.StationProductState(objectNode.Parent);
-                        newNode.Create(context, objectNode);
+                    //    objectNode.Parent?.ReplaceChild(context, newNode);
 
-                        // replace the node in the parent.
-                        if (objectNode.Parent != null)
-                        {
-                            objectNode.Parent.ReplaceChild(context, newNode);
-                        }
-
-                        return newNode;
-                    }
-
-                case Station.ObjectTypes.StationCommandsType:
-                    {
-                        if (objectNode is Station.StationCommandsState)
-                        {
-                            break;
-                        }
-
-                        Station.StationCommandsState newNode = new Station.StationCommandsState(objectNode.Parent);
-                        newNode.Create(context, objectNode);
-
-                        // replace the node in the parent.
-                        if (objectNode.Parent != null)
-                        {
-                            objectNode.Parent.ReplaceChild(context, newNode);
-                        }
-
-                        return newNode;
-                    }
-
-                case Station.ObjectTypes.TelemetryType:
-                    {
-                        if (objectNode is Station.TelemetryState)
-                        {
-                            break;
-                        }
-
-                        Station.TelemetryState newNode = new Station.TelemetryState(objectNode.Parent);
-                        newNode.Create(context, objectNode);
-
-                        // replace the node in the parent.
-                        if (objectNode.Parent != null)
-                        {
-                            objectNode.Parent.ReplaceChild(context, newNode);
-                        }
-
-                        return newNode;
-                    }
+                    //    return newNode;
+                    break;
+                }
             }
 
             return predefinedNode;
