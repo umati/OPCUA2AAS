@@ -1,14 +1,39 @@
 
 using Opc.Ua.Export;
 using Opc.Ua.Server;
-using Station;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace Opc.Ua.Sample
 {
+    public enum StationStatus : int
+    {
+        Ready = 0,
+        WorkInProgress = 1,
+        Fault = 2
+    }
+
     public class StationNodeManager : CustomNodeManager2
     {
+        private Timer m_stationClock;
+        
+        private static ulong m_overallRunningTime = 0;
+        private static ulong m_faultyTime = 0;
+        private static ulong m_idealCycleTime = 5000;
+        private static ulong m_actualCycleTime = 5000;
+        private static StationStatus m_status = StationStatus.Ready;
+        private static ulong m_energyConsumption = 1000;
+        private static ulong m_pressure = 1000;
+        private static ulong m_productSerialNumber = 1;
+        private static ulong m_numberOfManufacturedProducts = 1;
+        private static ulong m_numberOfDiscardedProducts = 0;
+
+        private ushort m_namespaceIndex;
+        private long m_lastUsedId;
+        private static StationNodeManager m_this;
+
         public StationNodeManager(IServerInternal server, ApplicationConfiguration configuration)
         : base(server, configuration)
         {
@@ -20,6 +45,8 @@ namespace Opc.Ua.Sample
 
             m_namespaceIndex = Server.NamespaceUris.GetIndexOrAppend(namespaceUris[0]);
             m_lastUsedId = 0;
+            m_stationClock = new Timer(Tick, this, Timeout.Infinite, (int)m_actualCycleTime);
+            m_this = this;
         }
 
         public override NodeId New(ISystemContext context, NodeState node)
@@ -121,41 +148,24 @@ namespace Opc.Ua.Sample
 
         protected override NodeState AddBehaviourToPredefinedNode(ISystemContext context, NodeState predefinedNode)
         {
-            MethodState method = predefinedNode as MethodState;
-            if (method != null)
+            MethodState methodState = predefinedNode as MethodState;
+            if (methodState != null)
             {
-                if (method.DisplayName == "Execute")
+                if (methodState.DisplayName == "Execute")
                 {
-                    method.OnCallMethod = new GenericMethodCalledEventHandler(Execute);
+                    methodState.OnCallMethod = new GenericMethodCalledEventHandler(Execute);
+                    return predefinedNode;
                 }
-                if (method.DisplayName == "Reset")
+                if (methodState.DisplayName == "Reset")
                 {
-                    method.OnCallMethod = new GenericMethodCalledEventHandler(Reset);
+                    methodState.OnCallMethod = new GenericMethodCalledEventHandler(Reset);
+                    return predefinedNode;
                 }
-                if (method.DisplayName == "OpenPressureReleaseValve")
+                if (methodState.DisplayName == "OpenPressureReleaseValve")
                 {
-                    method.OnCallMethod = new GenericMethodCalledEventHandler(OpenPressureReleaseValve);
+                    methodState.OnCallMethod = new GenericMethodCalledEventHandler(OpenPressureReleaseValve);
+                    return predefinedNode;
                 }
-            }
-
-            BaseObjectState objectState = predefinedNode as BaseObjectState;
-            if (objectState == null)
-            {
-                return predefinedNode;
-            }
-
-            NodeId typeId = objectState.TypeDefinitionId;
-            if (!IsNodeIdInNamespace(typeId) || typeId.IdType != IdType.Numeric)
-            {
-                return predefinedNode;
-            }
-
-            switch ((uint)typeId.Identifier)
-            {
-                    //    Station.StationState newNode = new Station.StationState(objectNode.Parent);
-                        //    newNode.Create(context, objectNode);
-                        //    objectNode.Parent?.ReplaceChild(context, newNode);
-                        //    return newNode;
             }
 
             return predefinedNode;
@@ -163,37 +173,136 @@ namespace Opc.Ua.Sample
 
         private ServiceResult Execute(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
         {
-            //if ((int)m_stationTelemetry.Status.Value == (int)StationStatus.Fault)
-            //{
-            //    ServiceResult result = new ServiceResult(new Exception("Machine is in fault state, call reset first!"));
-            //    return result;
-            //}
+            if (m_status == StationStatus.Fault)
+            {
+                ServiceResult result = new ServiceResult(new Exception("Machine is in fault state, call reset first!"));
+                return result;
+            }
 
-            //m_stationProduct.ProductSerialNumber.Value = (ulong)inputArguments[0];
+            m_productSerialNumber = (ulong)inputArguments[0];
 
-            //m_stationTelemetry.Status.Value = StationStatus.WorkInProgress;
+            m_status = StationStatus.WorkInProgress;
 
-            //m_stationClock.Change((int)m_stationTelemetry.ActualCycleTime.Value, (int)m_stationTelemetry.ActualCycleTime.Value);
+            m_stationClock.Change((int)m_actualCycleTime, (int)m_actualCycleTime);
 
             return ServiceResult.Good;
         }
 
         private ServiceResult Reset(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
         {
-            //m_stationTelemetry.Status.Value = StationStatus.Ready;
+            m_status = StationStatus.Ready;
 
             return ServiceResult.Good;
         }
 
         private ServiceResult OpenPressureReleaseValve(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
         {
-            //m_stationTelemetry.Pressure.Value = 1000;
+            m_pressure = 1000;
 
             return ServiceResult.Good;
         }
 
+        private static void UpdateVariables()
+        {
+            NodeState node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_NumberOfManufacturedProducts.Identifier, m_this.m_namespaceIndex));
+            BaseDataVariableState variableState = node as BaseDataVariableState;
+            if (variableState != null)
+            {
+                variableState.Value = m_numberOfManufacturedProducts;
+            }
 
-        private ushort m_namespaceIndex;
-        private long m_lastUsedId;
+            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_NumberOfDiscardedProducts.Identifier, m_this.m_namespaceIndex));
+            variableState = node as BaseDataVariableState;
+            if (variableState != null)
+            {
+                variableState.Value = m_numberOfDiscardedProducts;
+            }
+
+            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_ProductSerialNumber.Identifier, m_this.m_namespaceIndex));
+            variableState = node as BaseDataVariableState;
+            if (variableState != null)
+            {
+                variableState.Value = m_productSerialNumber;
+            }
+
+            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_ActualCycleTime.Identifier, m_this.m_namespaceIndex));
+            variableState = node as BaseDataVariableState;
+            if (variableState != null)
+            {
+                variableState.Value = m_actualCycleTime;
+            }
+
+            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_EnergyConsumption.Identifier, m_this.m_namespaceIndex));
+            variableState = node as BaseDataVariableState;
+            if (variableState != null)
+            {
+                variableState.Value = m_energyConsumption;
+            }
+            
+            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_FaultyTime.Identifier, m_this.m_namespaceIndex));
+            variableState = node as BaseDataVariableState;
+            if (variableState != null)
+            {
+                variableState.Value = m_faultyTime;
+            }
+
+            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_IdealCycleTime.Identifier, m_this.m_namespaceIndex));
+            variableState = node as BaseDataVariableState;
+            if (variableState != null)
+            {
+                variableState.Value = m_idealCycleTime;
+            }
+
+            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_OverallRunningTime.Identifier, m_this.m_namespaceIndex));
+            variableState = node as BaseDataVariableState;
+            if (variableState != null)
+            {
+                variableState.Value = m_overallRunningTime;
+            }
+
+            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_Pressure.Identifier, m_this.m_namespaceIndex));
+            variableState = node as BaseDataVariableState;
+            if (variableState != null)
+            {
+                variableState.Value = m_pressure;
+            }
+
+            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_Status.Identifier, m_this.m_namespaceIndex));
+            variableState = node as BaseDataVariableState;
+            if (variableState != null)
+            {
+                variableState.Value = m_status;
+            }
+        }
+
+        private static void Tick(object state)
+        {
+            if (m_status == StationStatus.Fault)
+            {
+                return;
+            }
+
+            if (m_status == StationStatus.WorkInProgress)
+            {
+                // we produce a discarded product every 100 parts
+                // we go into fault mode every 1000 parts
+                if ((m_numberOfManufacturedProducts % 1000) == 0)
+                {
+                    m_status = StationStatus.Fault;
+                }
+                else if ((m_numberOfManufacturedProducts % 100) == 0)
+                {
+                    m_numberOfDiscardedProducts++;
+                    m_productSerialNumber++;
+                }
+                else
+                {
+                    m_numberOfManufacturedProducts++;
+                    m_productSerialNumber++;
+                }
+            }
+
+            UpdateVariables();
+        }
     }
 }
