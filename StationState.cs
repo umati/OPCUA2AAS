@@ -131,37 +131,6 @@ namespace Station
             //m_stationClock = new Timer(Tick, this, Timeout.Infinite, (int)m_stationTelemetry.ActualCycleTime.Value);
         }
 
-        private ServiceResult Execute(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
-        {
-            if ((int)m_stationTelemetry.Status.Value == (int)StationStatus.Fault)
-            {
-                ServiceResult result = new ServiceResult(new Exception("Machine is in fault state, call reset first!"));
-                return result;
-            }
-
-            m_stationProduct.ProductSerialNumber.Value = (ulong)inputArguments[0];
-
-            m_stationTelemetry.Status.Value = StationStatus.WorkInProgress;
-
-            m_stationClock.Change((int)m_stationTelemetry.ActualCycleTime.Value, (int)m_stationTelemetry.ActualCycleTime.Value);
-
-            return ServiceResult.Good;
-        }
-
-        private ServiceResult Reset(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
-        {
-            m_stationTelemetry.Status.Value = StationStatus.Ready;
-
-            return ServiceResult.Good;
-        }
-
-        private ServiceResult OpenPressureReleaseValve(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
-        {
-            m_stationTelemetry.Pressure.Value = 1000;
-
-            return ServiceResult.Good;
-        }
-
         private static void Tick(object state)
         {
             ((StationState)state).UpdateNodeValues();

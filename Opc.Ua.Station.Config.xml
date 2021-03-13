@@ -15,7 +15,7 @@
     <ApplicationCertificate>
       <StoreType>X509Store</StoreType>
       <StorePath>CurrentUser\UA_MachineDefault</StorePath>
-      <SubjectName>UndefinedStationName</SubjectName>
+      <SubjectName>Station42</SubjectName>
     </ApplicationCertificate>
 
     <!-- Where the issuer certificate are stored (certificate authorities) -->

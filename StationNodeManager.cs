@@ -1,6 +1,7 @@
 
 using Opc.Ua.Export;
 using Opc.Ua.Server;
+using Station;
 using System.Collections.Generic;
 using System.IO;
 
@@ -120,13 +121,30 @@ namespace Opc.Ua.Sample
 
         protected override NodeState AddBehaviourToPredefinedNode(ISystemContext context, NodeState predefinedNode)
         {
-            BaseObjectState objectNode = predefinedNode as BaseObjectState;
-            if (objectNode == null)
+            MethodState method = predefinedNode as MethodState;
+            if (method != null)
+            {
+                if (method.DisplayName == "Execute")
+                {
+                    method.OnCallMethod = new GenericMethodCalledEventHandler(Execute);
+                }
+                if (method.DisplayName == "Reset")
+                {
+                    method.OnCallMethod = new GenericMethodCalledEventHandler(Reset);
+                }
+                if (method.DisplayName == "OpenPressureReleaseValve")
+                {
+                    method.OnCallMethod = new GenericMethodCalledEventHandler(OpenPressureReleaseValve);
+                }
+            }
+
+            BaseObjectState objectState = predefinedNode as BaseObjectState;
+            if (objectState == null)
             {
                 return predefinedNode;
             }
 
-            NodeId typeId = objectNode.TypeDefinitionId;
+            NodeId typeId = objectState.TypeDefinitionId;
             if (!IsNodeIdInNamespace(typeId) || typeId.IdType != IdType.Numeric)
             {
                 return predefinedNode;
@@ -134,25 +152,46 @@ namespace Opc.Ua.Sample
 
             switch ((uint)typeId.Identifier)
             {
-                case Station.ObjectTypes.StationType:
-                {
-                    if (objectNode is Station.StationState)
-                    {
-                        break;
-                    }
-
                     //    Station.StationState newNode = new Station.StationState(objectNode.Parent);
-                    //    newNode.Create(context, objectNode);
-
-                    //    objectNode.Parent?.ReplaceChild(context, newNode);
-
-                    //    return newNode;
-                    break;
-                }
+                        //    newNode.Create(context, objectNode);
+                        //    objectNode.Parent?.ReplaceChild(context, newNode);
+                        //    return newNode;
             }
 
             return predefinedNode;
         }
+
+        private ServiceResult Execute(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
+        {
+            //if ((int)m_stationTelemetry.Status.Value == (int)StationStatus.Fault)
+            //{
+            //    ServiceResult result = new ServiceResult(new Exception("Machine is in fault state, call reset first!"));
+            //    return result;
+            //}
+
+            //m_stationProduct.ProductSerialNumber.Value = (ulong)inputArguments[0];
+
+            //m_stationTelemetry.Status.Value = StationStatus.WorkInProgress;
+
+            //m_stationClock.Change((int)m_stationTelemetry.ActualCycleTime.Value, (int)m_stationTelemetry.ActualCycleTime.Value);
+
+            return ServiceResult.Good;
+        }
+
+        private ServiceResult Reset(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
+        {
+            //m_stationTelemetry.Status.Value = StationStatus.Ready;
+
+            return ServiceResult.Good;
+        }
+
+        private ServiceResult OpenPressureReleaseValve(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
+        {
+            //m_stationTelemetry.Pressure.Value = 1000;
+
+            return ServiceResult.Good;
+        }
+
 
         private ushort m_namespaceIndex;
         private long m_lastUsedId;
