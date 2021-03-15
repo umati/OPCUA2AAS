@@ -18,7 +18,7 @@ namespace Opc.Ua.Sample
     public class StationNodeManager : CustomNodeManager2
     {
         private Timer m_stationClock;
-        
+
         private static ulong m_overallRunningTime = 0;
         private static ulong m_faultyTime = 0;
         private static ulong m_idealCycleTime = 5000;
@@ -154,6 +154,24 @@ namespace Opc.Ua.Sample
                 if (methodState.DisplayName == "Execute")
                 {
                     methodState.OnCallMethod = new GenericMethodCalledEventHandler(Execute);
+
+                    // define the method's input argument (the serial number)
+                    methodState.InputArguments = new PropertyState<Argument[]>(methodState)
+                    {
+                        NodeId = new NodeId(methodState.BrowseName.Name + "InArgs", NamespaceIndex),
+                        BrowseName = BrowseNames.InputArguments
+                    };
+                    methodState.InputArguments.DisplayName = methodState.InputArguments.BrowseName.Name;
+                    methodState.InputArguments.TypeDefinitionId = VariableTypeIds.PropertyType;
+                    methodState.InputArguments.ReferenceTypeId = ReferenceTypeIds.HasProperty;
+                    methodState.InputArguments.DataType = DataTypeIds.Argument;
+                    methodState.InputArguments.ValueRank = ValueRanks.OneDimension;
+
+                    methodState.InputArguments.Value = new Argument[]
+                    {
+                        new Argument { Name = "SerialNumber", Description = "Serial number of the product to make.",  DataType = DataTypeIds.UInt64, ValueRank = ValueRanks.Scalar }
+                    };
+
                     return predefinedNode;
                 }
                 if (methodState.DisplayName == "Reset")
@@ -238,7 +256,7 @@ namespace Opc.Ua.Sample
             {
                 variableState.Value = m_energyConsumption;
             }
-            
+
             node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_FaultyTime.Identifier, m_this.m_namespaceIndex));
             variableState = node as BaseDataVariableState;
             if (variableState != null)
