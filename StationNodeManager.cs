@@ -19,20 +19,19 @@ namespace Opc.Ua.Sample
     {
         private Timer m_stationClock;
 
-        private static ulong m_overallRunningTime = 0;
-        private static ulong m_faultyTime = 0;
-        private static ulong m_idealCycleTime = 5000;
-        private static ulong m_actualCycleTime = 5000;
-        private static StationStatus m_status = StationStatus.Ready;
-        private static ulong m_energyConsumption = 1000;
-        private static ulong m_pressure = 1000;
-        private static ulong m_productSerialNumber = 1;
-        private static ulong m_numberOfManufacturedProducts = 1;
-        private static ulong m_numberOfDiscardedProducts = 0;
+        private ulong m_overallRunningTime = 0;
+        private ulong m_faultyTime = 0;
+        private ulong m_idealCycleTime = 5000;
+        private ulong m_actualCycleTime = 5000;
+        private StationStatus m_status = StationStatus.Ready;
+        private ulong m_energyConsumption = 1000;
+        private ulong m_pressure = 1000;
+        private ulong m_productSerialNumber = 1;
+        private ulong m_numberOfManufacturedProducts = 1;
+        private ulong m_numberOfDiscardedProducts = 0;
 
         private ushort m_namespaceIndex;
         private long m_lastUsedId;
-        private static StationNodeManager m_this;
 
         public StationNodeManager(IServerInternal server, ApplicationConfiguration configuration)
         : base(server, configuration)
@@ -46,7 +45,6 @@ namespace Opc.Ua.Sample
             m_namespaceIndex = Server.NamespaceUris.GetIndexOrAppend(namespaceUris[0]);
             m_lastUsedId = 0;
             m_stationClock = new Timer(Tick, this, Timeout.Infinite, (int)m_actualCycleTime);
-            m_this = this;
         }
 
         public override NodeId New(ISystemContext context, NodeState node)
@@ -220,107 +218,119 @@ namespace Opc.Ua.Sample
             return ServiceResult.Good;
         }
 
-        private static void UpdateVariables()
+        private void UpdateVariables()
         {
-            NodeState node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_NumberOfManufacturedProducts.Identifier, m_this.m_namespaceIndex));
+            NodeState node = Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_NumberOfManufacturedProducts.Identifier, m_namespaceIndex));
             BaseDataVariableState variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
                 variableState.Value = m_numberOfManufacturedProducts;
+                variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_NumberOfDiscardedProducts.Identifier, m_this.m_namespaceIndex));
+            node = Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_NumberOfDiscardedProducts.Identifier, m_namespaceIndex));
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
                 variableState.Value = m_numberOfDiscardedProducts;
+                variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_ProductSerialNumber.Identifier, m_this.m_namespaceIndex));
+            node = Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_ProductSerialNumber.Identifier, m_namespaceIndex));
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
                 variableState.Value = m_productSerialNumber;
+                variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_ActualCycleTime.Identifier, m_this.m_namespaceIndex));
+            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_ActualCycleTime.Identifier, m_namespaceIndex));
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
                 variableState.Value = m_actualCycleTime;
+                variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_EnergyConsumption.Identifier, m_this.m_namespaceIndex));
+            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_EnergyConsumption.Identifier, m_namespaceIndex));
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
                 variableState.Value = m_energyConsumption;
+                variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_FaultyTime.Identifier, m_this.m_namespaceIndex));
+            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_FaultyTime.Identifier, m_namespaceIndex));
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
                 variableState.Value = m_faultyTime;
+                variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_IdealCycleTime.Identifier, m_this.m_namespaceIndex));
+            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_IdealCycleTime.Identifier, m_namespaceIndex));
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
                 variableState.Value = m_idealCycleTime;
+                variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_OverallRunningTime.Identifier, m_this.m_namespaceIndex));
+            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_OverallRunningTime.Identifier, m_namespaceIndex));
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
                 variableState.Value = m_overallRunningTime;
+                variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_Pressure.Identifier, m_this.m_namespaceIndex));
+            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_Pressure.Identifier, m_namespaceIndex));
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
                 variableState.Value = m_pressure;
+                variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = m_this.Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_Status.Identifier, m_this.m_namespaceIndex));
+            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_Status.Identifier, m_namespaceIndex));
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
                 variableState.Value = m_status;
+                variableState.ClearChangeMasks(SystemContext, false);
             }
         }
 
         private static void Tick(object state)
         {
-            if (m_status == StationStatus.Fault)
+            StationNodeManager nodeManager = (StationNodeManager) state;
+
+            if (nodeManager.m_status == StationStatus.Fault)
             {
                 return;
             }
 
-            if (m_status == StationStatus.WorkInProgress)
+            if (nodeManager.m_status == StationStatus.WorkInProgress)
             {
                 // we produce a discarded product every 100 parts
                 // we go into fault mode every 1000 parts
-                if ((m_numberOfManufacturedProducts % 1000) == 0)
+                if ((nodeManager.m_numberOfManufacturedProducts % 1000) == 0)
                 {
-                    m_status = StationStatus.Fault;
+                    nodeManager.m_status = StationStatus.Fault;
                 }
-                else if ((m_numberOfManufacturedProducts % 100) == 0)
+                else if ((nodeManager.m_numberOfManufacturedProducts % 100) == 0)
                 {
-                    m_numberOfDiscardedProducts++;
-                    m_productSerialNumber++;
+                    nodeManager.m_numberOfDiscardedProducts++;
+                    nodeManager.m_productSerialNumber++;
                 }
                 else
                 {
-                    m_numberOfManufacturedProducts++;
-                    m_productSerialNumber++;
+                    nodeManager.m_numberOfManufacturedProducts++;
+                    nodeManager.m_productSerialNumber++;
                 }
             }
 
-            UpdateVariables();
+            nodeManager.UpdateVariables();
         }
     }
 }
