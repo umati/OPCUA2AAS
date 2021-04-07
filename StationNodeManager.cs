@@ -127,14 +127,14 @@ namespace Opc.Ua.Sample
             Uri partUriDocument = PackUriHelper.CreatePartUri(new Uri("Content\\Document.xml", UriKind.Relative));
             Uri partUriResource = PackUriHelper.CreatePartUri(new Uri("Resources\\Image1.jpg", UriKind.Relative));
 
-            string documentPath = string.Empty;
+            string documentPath = Path.Combine(Directory.GetCurrentDirectory(), "Station.NodeSet2.xml");
             string resourcePath = string.Empty;
-            string packagePath = string.Empty;
+            string packagePath = Path.Combine(Directory.GetCurrentDirectory(), "Station.aasx");
 
             using (Package package = Package.Open(packagePath, FileMode.Create))
             {
                 // Add the Document part to the Package
-                PackagePart packagePartDocument = package.CreatePart(partUriDocument, System.Net.Mime.MediaTypeNames.Text.Xml);
+                PackagePart packagePartDocument = package.CreatePart(partUriDocument, MediaTypeNames.Text.Xml);
 
                 // Copy the data to the Document Part
                 using (FileStream fileStream = new FileStream(documentPath, FileMode.Open, FileAccess.Read))
