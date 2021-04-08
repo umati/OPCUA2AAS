@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Packaging;
 using System.Net.Mime;
+using System.Text;
 using System.Threading;
 
 namespace Opc.Ua.Sample
@@ -123,42 +124,51 @@ namespace Opc.Ua.Sample
 
         private ServiceResult OnGenerateAASCall(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
         {
-            // Convert system path and file names to Part URIs.
-            Uri partUriDocument = PackUriHelper.CreatePartUri(new Uri("Content\\Document.xml", UriKind.Relative));
-            Uri partUriResource = PackUriHelper.CreatePartUri(new Uri("Resources\\Image1.jpg", UriKind.Relative));
-
-            string documentPath = Path.Combine(Directory.GetCurrentDirectory(), "Station.NodeSet2.xml");
-            string resourcePath = string.Empty;
-            string packagePath = Path.Combine(Directory.GetCurrentDirectory(), "Station.aasx");
-
-            using (Package package = Package.Open(packagePath, FileMode.Create))
+            try
             {
-                // Add the Document part to the Package
-                PackagePart packagePartDocument = package.CreatePart(partUriDocument, MediaTypeNames.Text.Xml);
-
-                // Copy the data to the Document Part
-                using (FileStream fileStream = new FileStream(documentPath, FileMode.Open, FileAccess.Read))
+                string packagePath = Path.Combine(Directory.GetCurrentDirectory(), "Station.aasx");
+                using (Package package = Package.Open(packagePath, FileMode.Create))
                 {
-                    CopyStream(fileStream, packagePartDocument.GetStream());
+                    // add package origin part
+                    PackagePart origin = package.CreatePart(new Uri("/aasx/aasx-origin", UriKind.Relative), MediaTypeNames.Text.Plain, CompressionOption.Maximum);
+
+                    using (Stream fileStream = origin.GetStream(FileMode.Create))
+                    {
+                        var bytes = Encoding.ASCII.GetBytes("Intentionally empty.");
+                        fileStream.Write(bytes, 0, bytes.Length);
+                    }
+
+                    package.CreateRelationship(origin.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aasx-origin");
+
+                    // add package spec part
+                    PackagePart spec = package.CreatePart(new Uri("/aasx/aasenv-with-no-id/aasenv-with-no-id.aas.xml", UriKind.Relative), MediaTypeNames.Text.Xml);
+
+                    string packageSpecPath = Path.Combine(Directory.GetCurrentDirectory(), "aasenv-with-no-id.aas.xml");
+                    using (FileStream fileStream = new FileStream(packageSpecPath, FileMode.Open, FileAccess.Read))
+                    {
+                        CopyStream(fileStream, spec.GetStream());
+                    }
+
+                    origin.CreateRelationship(spec.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aas-spec");
+
+                    // add the nodeset2.xml as a supplemental document part
+                    PackagePart supplementalDoc = package.CreatePart(new Uri("/aasx/Station.NodeSet2.xml", UriKind.Relative), MediaTypeNames.Text.Xml);
+
+                    string documentPath = Path.Combine(Directory.GetCurrentDirectory(), "Station.NodeSet2.xml");
+                    using (FileStream fileStream = new FileStream(documentPath, FileMode.Open, FileAccess.Read))
+                    {
+                        CopyStream(fileStream, supplementalDoc.GetStream());
+                    }
+
+                    package.CreateRelationship(supplementalDoc.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aas-suppl");
                 }
 
-                // Add a Package Relationship to the Document Part
-                package.CreateRelationship(packagePartDocument.Uri, TargetMode.Internal, "PackageRelationshipType");
-
-                // Add a Resource Part to the Package
-                PackagePart packagePartResource = package.CreatePart(partUriResource, MediaTypeNames.Image.Jpeg);
-
-                // Copy the data to the Resource Part
-                using (FileStream fileStream = new FileStream(resourcePath, FileMode.Open, FileAccess.Read))
-                {
-                    CopyStream(fileStream, packagePartResource.GetStream());
-                }
-
-                // Add Relationship from the Document part to the Resource part
-                packagePartDocument.CreateRelationship(new Uri(@"../resources/image1.jpg", UriKind.Relative), TargetMode.Internal, "ResourceRelationshipType");
+                return ServiceResult.Good;
             }
-              
-            return ServiceResult.Good;
+            catch (Exception ex)
+            {
+                return ServiceResult.Create(ex, StatusCodes.BadUnexpectedError, "Failed to create Asset Admin Shell!");
+            }
         }
 
         private void CopyStream(Stream source, Stream target)

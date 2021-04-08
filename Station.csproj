@@ -9,12 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="aasenv-with-no-id.aas.xml" />
     <None Remove="Opc.Ua.Station.Config.xml" />
     <None Remove="Station.Types.bsd" />
     <None Remove="Station.Types.xsd" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="aasenv-with-no-id.aas.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Opc.Ua.Station.Config.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
