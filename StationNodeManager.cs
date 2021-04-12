@@ -36,6 +36,17 @@ namespace Opc.Ua.Sample
         private ushort m_namespaceIndex;
         private long m_lastUsedId;
 
+        private NodeId m_NumberOfManufacturedProductsID;
+        private NodeId m_NumberOfDiscardedProductsID;
+        private NodeId m_ProductSerialNumberID;
+        private NodeId m_ActualCycleTimeID;
+        private NodeId m_EnergyConsumptionID;
+        private NodeId m_FaultyTimeID;
+        private NodeId m_IdealCycleTimeID;
+        private NodeId m_OverallRunningTimeID;
+        private NodeId m_PressureID;
+        private NodeId m_StatusID;
+
         public StationNodeManager(IServerInternal server, ApplicationConfiguration configuration)
         : base(server, configuration)
         {
@@ -203,6 +214,7 @@ namespace Opc.Ua.Sample
 
         protected override NodeState AddBehaviourToPredefinedNode(ISystemContext context, NodeState predefinedNode)
         {
+            // add behaviour to our methods
             MethodState methodState = predefinedNode as MethodState;
             if (methodState != null)
             {
@@ -238,6 +250,52 @@ namespace Opc.Ua.Sample
                 {
                     methodState.OnCallMethod = new GenericMethodCalledEventHandler(OpenPressureReleaseValve);
                     return predefinedNode;
+                }
+            }
+
+            // also capture the nodeIDs of our instance variables (i.e. NOT the model!)
+            BaseDataVariableState variableState = predefinedNode as BaseDataVariableState;
+            if ((variableState != null) && (variableState.ModellingRuleId == null))
+            {
+                if (variableState.DisplayName == "NumberOfManufacturedProducts")
+                {
+                    m_NumberOfManufacturedProductsID = variableState.NodeId;
+                }
+                if (variableState.DisplayName == "NumberOfDiscardedProducts")
+                {
+                    m_NumberOfDiscardedProductsID = variableState.NodeId;
+                }
+                if (variableState.DisplayName == "ProductSerialNumber")
+                {
+                    m_ProductSerialNumberID = variableState.NodeId;
+                }
+                if (variableState.DisplayName == "ActualCycleTime")
+                {
+                    m_ActualCycleTimeID = variableState.NodeId;
+                }
+                if (variableState.DisplayName == "EnergyConsumption")
+                {
+                    m_EnergyConsumptionID = variableState.NodeId;
+                }
+                if (variableState.DisplayName == "FaultyTime")
+                {
+                    m_FaultyTimeID = variableState.NodeId;
+                }
+                if (variableState.DisplayName == "IdealCycleTime")
+                {
+                    m_IdealCycleTimeID = variableState.NodeId;
+                }
+                if (variableState.DisplayName == "OverallRunningTime")
+                {
+                    m_OverallRunningTimeID = variableState.NodeId;
+                }
+                if (variableState.DisplayName == "Pressure")
+                {
+                    m_PressureID = variableState.NodeId;
+                }
+                if (variableState.DisplayName == "Status")
+                {
+                    m_StatusID = variableState.NodeId;
                 }
             }
 
@@ -277,7 +335,7 @@ namespace Opc.Ua.Sample
 
         private void UpdateVariables()
         {
-            NodeState node = Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_NumberOfManufacturedProducts.Identifier, m_namespaceIndex));
+            NodeState node = Find(m_NumberOfManufacturedProductsID);
             BaseDataVariableState variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
@@ -285,7 +343,7 @@ namespace Opc.Ua.Sample
                 variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_NumberOfDiscardedProducts.Identifier, m_namespaceIndex));
+            node = Find(m_NumberOfDiscardedProductsID);
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
@@ -293,7 +351,7 @@ namespace Opc.Ua.Sample
                 variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = Find(new NodeId(Station.VariableIds.StationInstance_StationProduct_ProductSerialNumber.Identifier, m_namespaceIndex));
+            node = Find(m_ProductSerialNumberID);
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
@@ -301,7 +359,7 @@ namespace Opc.Ua.Sample
                 variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_ActualCycleTime.Identifier, m_namespaceIndex));
+            node = Find(m_ActualCycleTimeID);
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
@@ -309,7 +367,7 @@ namespace Opc.Ua.Sample
                 variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_EnergyConsumption.Identifier, m_namespaceIndex));
+            node = Find(m_EnergyConsumptionID);
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
@@ -317,7 +375,7 @@ namespace Opc.Ua.Sample
                 variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_FaultyTime.Identifier, m_namespaceIndex));
+            node = Find(m_FaultyTimeID);
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
@@ -325,7 +383,7 @@ namespace Opc.Ua.Sample
                 variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_IdealCycleTime.Identifier, m_namespaceIndex));
+            node = Find(m_IdealCycleTimeID);
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
@@ -333,7 +391,7 @@ namespace Opc.Ua.Sample
                 variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_OverallRunningTime.Identifier, m_namespaceIndex));
+            node = Find(m_OverallRunningTimeID);
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
@@ -341,7 +399,7 @@ namespace Opc.Ua.Sample
                 variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_Pressure.Identifier, m_namespaceIndex));
+            node = Find(m_PressureID);
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
@@ -349,7 +407,7 @@ namespace Opc.Ua.Sample
                 variableState.ClearChangeMasks(SystemContext, false);
             }
 
-            node = Find(new NodeId(Station.VariableIds.StationInstance_StationTelemetry_Status.Identifier, m_namespaceIndex));
+            node = Find(m_StatusID);
             variableState = node as BaseDataVariableState;
             if (variableState != null)
             {
