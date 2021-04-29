@@ -6,6 +6,8 @@
     <AssemblyName>Station</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>Station</PackageId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Symbols" Version="1.4.365.48" />
     <PackageReference Include="System.IO.Packaging" Version="5.0.0" />
 
