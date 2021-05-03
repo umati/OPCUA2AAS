@@ -52,12 +52,15 @@ namespace Opc.Ua.Sample
         {
             SystemContext.NodeIdFactory = this;
 
-            List<string> namespaceUris = new List<string>();
-            namespaceUris.Add("http://opcfoundation.org/UA/Station/");
-            NamespaceUris = namespaceUris;
+            using (Stream stream = new FileStream("Station.NodeSet2.xml", FileMode.Open))
+            {
+                UANodeSet nodeSet = UANodeSet.Read(stream);
+                NamespaceUris = nodeSet.NamespaceUris;
+            }
 
-            m_namespaceIndex = Server.NamespaceUris.GetIndexOrAppend(namespaceUris[0]);
+            m_namespaceIndex = (ushort)(Server.NamespaceUris.Count - 1);
             m_lastUsedId = 0;
+
             m_stationClock = new Timer(Tick, this, Timeout.Infinite, (int)m_actualCycleTime);
         }
 
@@ -195,20 +198,17 @@ namespace Opc.Ua.Sample
 
         private void ImportNodeset2Xml(IDictionary<NodeId, IList<IReference>> externalReferences, string resourcepath)
         {
-            NodeStateCollection predefinedNodes = new NodeStateCollection();
-
-            Stream stream = new FileStream(resourcepath, FileMode.Open);
-            UANodeSet nodeSet = UANodeSet.Read(stream);
-
-            foreach (string namespaceUri in nodeSet.NamespaceUris)
+            using (Stream stream = new FileStream(resourcepath, FileMode.Open))
             {
-                SystemContext.NamespaceUris.GetIndexOrAppend(namespaceUri);
-            }
-            nodeSet.Import(SystemContext, predefinedNodes);
+                UANodeSet nodeSet = UANodeSet.Read(stream);
 
-            for (int i = 0; i < predefinedNodes.Count; i++)
-            {
-                AddPredefinedNode(SystemContext, predefinedNodes[i]);
+                NodeStateCollection predefinedNodes = new NodeStateCollection();
+                nodeSet.Import(SystemContext, predefinedNodes);
+
+                for (int i = 0; i < predefinedNodes.Count; i++)
+                {
+                    AddPredefinedNode(SystemContext, predefinedNodes[i]);
+                }
             }
         }
 
